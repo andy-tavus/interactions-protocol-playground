@@ -1,4 +1,4 @@
-# Quickstart Guide: Tavus Interactions Protocol Playground
+# Quickstart: Interactions Protocol Playground (powered by Tavus)
 
 1. **Generate a Conversation ID**: Use the [Tavus Platform](https://platform.tavus.io/conversations/create) or the [Tavus API](https://docs.tavus.io/api-reference/conversations/create-conversation) to create a new conversation. Copy the conversation ID (but don't Join in this step!).
 
