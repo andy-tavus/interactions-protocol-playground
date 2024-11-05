@@ -54,8 +54,8 @@ textarea {
 
 #box1 { top: 2%; left: 2%; }
 #box2 { top: 2%; right: 2%; }
-#box3 { bottom: 6%; left: 2%; }
-#box4 { bottom: 6%; right: 2%; }
+#box3 { bottom: 10%; left: 2%; }
+#box4 { bottom: 10%; right: 2%; }
 
 /* Log box styling */
 #utterance-log {
