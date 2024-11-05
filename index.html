@@ -22,8 +22,10 @@
     <div id="call-container"></div>
   
     <div id="conversation-input-box">
-        <input type="text" id="conversation-id" placeholder="Enter conversation_id" oninput="updateTextAreas()">
-        <button onclick="joinNewRoom()">Join</button>
+       <div style="display: flex; align-items: center; justify-content: center;">
+            <input type="text" id="conversation-id" placeholder="Enter conversation_id" oninput="updateTextAreas()">
+            <button onclick="joinNewRoom()" style="margin-left: 2%; margin-top: 0px;">Join</button>
+       </div>
     </div>
 
     <div id="log-toggle-container">
@@ -31,7 +33,8 @@
     </div>
 
     <div id="box1" class="corner-box">
-        <textarea id="echo-box">sendAppMessage({
+        <textarea id="echo-box" style="width:100%; height:100%;">
+sendAppMessage({
   "message_type": "conversation",
   "event_type": "conversation.echo",
   "conversation_id": "c123456",
@@ -39,11 +42,13 @@
     "text": "This is the text the replica will speak."
   }
 });
-        </textarea>conversation.<button onclick="executeCode('echo-box')">echo</button>
+        </textarea>
+        conversation.<button onclick="executeCode('echo-box')">echo</button>
     </div>
 
     <div id="box2" class="corner-box">
-        <textarea id="respond-box">sendAppMessage({
+        <textarea id="respond-box" style="width:100%; height:100%;">
+sendAppMessage({
   "message_type": "conversation",
   "event_type": "conversation.respond",
   "conversation_id": "c123456",
@@ -51,20 +56,24 @@
     "text": "This is text the replica will respond to, as if the user in the meeting spoke it."
   }
 });
-        </textarea>conversation.<button onclick="executeCode('respond-box')">respond</button>
+        </textarea>
+        conversation.<button onclick="executeCode('respond-box')">respond</button>
     </div>
 
     <div id="box3" class="corner-box">
-        <textarea id="interrupt-box">sendAppMessage({
+        <textarea id="interrupt-box" style="width:100%; height:100%;">
+sendAppMessage({
   "message_type": "conversation",
   "event_type": "conversation.interrupt",
   "conversation_id": "c123456"
 });
-        </textarea>conversation.<button onclick="executeCode('interrupt-box')">interrupt</button>
+        </textarea>
+        conversation.<button onclick="executeCode('interrupt-box')">interrupt</button>
     </div>
 
     <div id="box4" class="corner-box">
-        <textarea id="overwrite-context-box">sendAppMessage({
+        <textarea id="overwrite-context-box" style="width:100%; height:100%;">
+sendAppMessage({
   "message_type": "conversation",
   "event_type": "conversation.overwrite_llm_context",
   "conversation_id": "c123456",
@@ -72,7 +81,8 @@
     "text": "This text is the context that will be used to overwrite the existing conversational context."
   }
 });
-        </textarea>conversation.<button onclick="executeCode('overwrite-context-box')">overwrite_llm_context</button>
+        </textarea>
+        conversation.<button onclick="executeCode('overwrite-context-box')">overwrite_llm_context</button>
     </div>
 
     <div id="utterance-log">
