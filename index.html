@@ -1,189 +1,37 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tavus Interactions Protocol Playground</title>
+  <link rel="stylesheet" href="styles.css">
   <script src="https://unpkg.com/@daily-co/daily-js"></script>
-  <style>
-    /* General Styling */
-    body {
-      background-color: #1e1e1e;
-      font-family: 'Courier New', Courier, monospace;
-      color: #f1f1f1;
-      margin: 0;
-      padding: 0;
-    }
-
-    /* Neon glow effect for buttons */
-    button {
-      background-color: #df44a6;
-      border: none;
-      color: white;
-      padding: 10px;
-      text-align: left;
-      text-decoration: none;
-      display: inline-block;
-      font-size: 16px;
-      margin-top: 10px;
-      border-radius: 5px;
-      box-shadow: 0 0 10px #df44a6;
-      transition: all 0.3s ease;
-    }
-
-    button:hover {
-      background-color: #e75bbc;
-      box-shadow: 0 0 15px #df44a6;
-    }
-
-    /* Neon glow for text areas */
-    textarea {
-      background-color: #1e1e1e;
-      color: #f1f1f1;
-      border: 2px solid #df44a6;
-      padding: 10px;
-      border-radius: 5px;
-      box-shadow: 0 0 5px #df44a6;
-      font-family: 'Courier New', Courier, monospace;
-    }
-
-    /* Positioning the text boxes and buttons */
-    .corner-box {
-      position: fixed;
-      width: 24%;
-      height: 15%;
-      z-index: 100;
-      background-color: rgba(30, 30, 30, 0.9);
-      padding: 10px;
-      border-radius: 10px;
-      border: 2px solid #df44a6;
-      box-shadow: 0 0 15px #df44a6;
-    }
-
-    #box1 { top: 2%; left: 2%; }
-    #box2 { top: 2%; right: 2%; }
-    #box3 { bottom: 6%; left: 2%; }
-    #box4 { bottom: 6%; right: 2%; }
-
-    /* Log box styling */
-    #utterance-log {
-      position: fixed;
-      bottom: 3%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 42%;
-      height: 20%;
-      z-index: 100;
-      background-color: #1e1e1e;
-      border: 2px solid #df44a6;
-      overflow-y: scroll;
-      padding: 10px;
-      box-sizing: border-box;
-      border-radius: 10px;
-      box-shadow: 0 0 10px #df44a6;
-    }
-
-    /* Input box styling */
-    #conversation-input-box {
-      position: fixed;
-      top: 16%;
-      left: 50%;
-	  width: 30%;
-      transform: translate(-50%, -50%);
-      text-align: center;
-      z-index: 100;
-    }
-
-    input[type="text"] {
-      padding: 10px;
-      width: 80%;
-      border-radius: 5px;
-      border: 2px solid #df44a6;
-      background-color: #1e1e1e;
-      color: #f1f1f1;
-      font-family: 'Courier New', Courier, monospace;
-      box-shadow: 0 0 5px #df44a6;
-    }
-
-    /* Log container styling */
-    #log-toggle-container {
-      position: fixed;
-      bottom: 23%;
-      left: 50%;
-      width: 43%;
-      text-align: left;
-      border: 2px solid #df44a6;
-      padding: 10px;
-      box-sizing: border-box;
-      transform: translateX(-50%);
-      border-radius: 10px;
-      background-color: #1e1e1e;
-      color: #f1f1f1;
-      box-shadow: 0 0 10px #df44a6;
-    }
-
-    /* Daily iframe styling */
-    #call-container iframe {
-      z-index: 1;
-      border: 2px solid #df44a6;
-      box-shadow: 0 0 15px #df44a6;
-    }
-	
-    .centered-links a {
-        color: #f1f1f1;
-        text-decoration: none;
-    }
-    .centered-links a:visited {
-        color: #bfbfbf;
-    }
-	.centered-content {
-	            display: flex;
-	            flex-direction: column;
-	            align-items: center;
-	            position: absolute;
-	            top: 2%;
-	            left: 50%;
-	            transform: translateX(-50%);
-	            text-align: center;
-	        }
-	        .centered-content a {
-	            color: #df44a6;
-	            text-decoration: none;
-	        }
-	        .centered-content a:visited {
-	            color: #bfbfbf;
-	        }
-	
-  </style>
 </head>
 <body>
     <div class="centered-content">
         <div class="centered-links">
-            <a href="https://docs.tavus.io/sections/conversational-video-interface/live-interactions">docs</a> |
-            <a href="https://github.com/andy-tavus/interactions-protocol-playground/blob/main/index.html">source</a> |
-            <a href="https://github.com/andy-tavus/interactions-protocol-playground">readme</a> |
-            <a href="https://github.com/andy-tavus/interactions-protocol-playground/blob/main/quickstart.md">quickstart</a>
+            <a href="#docs">docs</a> |
+            <a href="#source">source</a> |
+            <a href="#readme">readme</a> |
+            <a href="#quickstart">quickstart</a>
         </div>
         <div><br>INTERACTIONS PROTOCOL Playground</div>
         <div>powered by <a href="#tavus">Tavus</a></div>
     </div>
-	
-  <div id="call-container"></div>
-  
-  <!-- Input field for conversation_id -->
- <div id="conversation-input-box">
-   <div style="display: flex; align-items: center; justify-content: center;">
-     <input type="text" id="conversation-id" placeholder="Enter conversation_id" oninput="updateTextAreas()">
-     <button onclick="joinNewRoom()" style="margin-left: 2%; margin-top: 0px;
-">Join</button>
-   </div>
- </div>
-  <!-- Log container for app-message events -->
-  <div id="log-toggle-container">
-	  conversation.<strong>utterance</strong> AppMessage Event Log
-  </div>
 
-  <!-- Four text areas and buttons for each event -->
-  <div id="box1" class="corner-box">
-    <textarea id="echo-box" style="width:100%; height:100%;">
-sendAppMessage({
+    <div id="call-container"></div>
+  
+    <div id="conversation-input-box">
+        <input type="text" id="conversation-id" placeholder="Enter conversation_id" oninput="updateTextAreas()">
+        <button onclick="joinNewRoom()">Join</button>
+    </div>
+
+    <div id="log-toggle-container">
+        conversation.<strong>utterance</strong> AppMessage Event Log
+    </div>
+
+    <div id="box1" class="corner-box">
+        <textarea id="echo-box">sendAppMessage({
   "message_type": "conversation",
   "event_type": "conversation.echo",
   "conversation_id": "c123456",
@@ -191,12 +39,11 @@ sendAppMessage({
     "text": "This is the text the replica will speak."
   }
 });
-    </textarea>conversation.<button onclick="executeCode('echo-box')">echo</button>
-  </div>
+        </textarea>conversation.<button onclick="executeCode('echo-box')">echo</button>
+    </div>
 
-  <div id="box2" class="corner-box">
-    <textarea id="respond-box" style="width:100%; height:100%;">
-sendAppMessage({
+    <div id="box2" class="corner-box">
+        <textarea id="respond-box">sendAppMessage({
   "message_type": "conversation",
   "event_type": "conversation.respond",
   "conversation_id": "c123456",
@@ -204,22 +51,20 @@ sendAppMessage({
     "text": "This is text the replica will respond to, as if the user in the meeting spoke it."
   }
 });
-    </textarea>conversation.<button onclick="executeCode('respond-box')">respond</button>
-  </div>
+        </textarea>conversation.<button onclick="executeCode('respond-box')">respond</button>
+    </div>
 
-  <div id="box3" class="corner-box">
-    <textarea id="interrupt-box" style="width:100%; height:100%;">
-sendAppMessage({
+    <div id="box3" class="corner-box">
+        <textarea id="interrupt-box">sendAppMessage({
   "message_type": "conversation",
   "event_type": "conversation.interrupt",
   "conversation_id": "c123456"
 });
-    </textarea>conversation.<button onclick="executeCode('interrupt-box')">interrupt</button>
-  </div>
+        </textarea>conversation.<button onclick="executeCode('interrupt-box')">interrupt</button>
+    </div>
 
-  <div id="box4" class="corner-box">
-    <textarea id="overwrite-context-box" style="width:100%; height:100%;">
-sendAppMessage({
+    <div id="box4" class="corner-box">
+        <textarea id="overwrite-context-box">sendAppMessage({
   "message_type": "conversation",
   "event_type": "conversation.overwrite_llm_context",
   "conversation_id": "c123456",
@@ -227,162 +72,13 @@ sendAppMessage({
     "text": "This text is the context that will be used to overwrite the existing conversational context."
   }
 });
-    </textarea>conversation.<button onclick="executeCode('overwrite-context-box')">overwrite_llm_context</button>
-  </div>
+        </textarea>conversation.<button onclick="executeCode('overwrite-context-box')">overwrite_llm_context</button>
+    </div>
 
-  <!-- Utterance log box to display streaming utterance data -->
-  <div id="utterance-log">
-    <div id="log-content"></div>
-  </div>
+    <div id="utterance-log">
+        <div id="log-content"></div>
+    </div>
 
-  <script>
-    let callFrame;
-
-    // Initialize the Daily Call Client and join a room
-    function joinRoom(conversationId) {
-      if (callFrame) {
-        callFrame.leave();
-      }
-
-	  callFrame = window.DailyIframe.createFrame({
-	    showLeaveButton: true,
-	    iframeStyle: {
-	      position: 'fixed',
-	      width: '65%',
-	      height: '44%',
-	      top: '48%',
-	      left: '50%',
-	      border: '2px solid',
-	      zIndex: 1,
-	      transform: 'translate(-50%, -50%)'
-	    }
-	  });
-
-      callFrame.join({ url: `https://tavus.daily.co/${conversationId}` })
-        .then(() => {
-          console.log(`Successfully joined room: ${conversationId}`);
-        })
-        .catch((err) => {
-          console.error('Error joining the room:', err);
-        });
-
-      // Listen for app-messages, including all events
-      callFrame.on('app-message', (message) => {
-        console.log('Received app-message:', message);
-        appendToLog(message.data);
-      });
-    }
-
-    // Function to join a new room when conversation_id is updated
-    function joinNewRoom() {
-      const conversationId = document.getElementById('conversation-id').value;
-
-      if (conversationId.trim() === "") {
-        alert("Please enter a valid conversation ID.");
-        return;
-      }
-
-      joinRoom(conversationId);
-      updateTextAreas();
-    }
-
-    // Function to update all text areas with the current conversation_id
-    function updateTextAreas() {
-      const conversation_id = document.getElementById('conversation-id').value || "c123456"; // Default to c123456 if empty
-
-      document.getElementById('echo-box').value = `sendAppMessage({
-  "message_type": "conversation",
-  "event_type": "conversation.echo",
-  "conversation_id": "${conversation_id}",
-  "properties": {
-    "text": "This is the text the replica will speak."
-  }
-});`;
-
-      document.getElementById('respond-box').value = `sendAppMessage({
-  "message_type": "conversation",
-  "event_type": "conversation.respond",
-  "conversation_id": "${conversation_id}",
-  "properties": {
-    "text": "This is text the replica will respond to, as if the user in the meeting spoke it."
-  }
-});`;
-
-      document.getElementById('interrupt-box').value = `sendAppMessage({
-  "message_type": "conversation",
-  "event_type": "conversation.interrupt",
-  "conversation_id": "${conversation_id}"
-});`;
-
-      document.getElementById('overwrite-context-box').value = `sendAppMessage({
-  "message_type": "conversation",
-  "event_type": "conversation.overwrite_llm_context",
-  "conversation_id": "${conversation_id}",
-  "properties": {
-    "text": "This text is the context that will be used to overwrite the existing conversational context."
-  }
-});`;
-    }
-
-	// Adjusted function to parse the message data and send it
-	function executeCode(textAreaId) {
-	  try {
-	    // Ensure callFrame is initialized before sending messages
-	    if (!callFrame) {
-	      console.error("callFrame is not initialized. Please join a room first.");
-	      alert("Please join a room before sending messages.");
-	      return;
-	    }
-
-	    const code = document.getElementById(textAreaId).value;
-	    const match = code.match(/sendAppMessage\(\s*({[\s\S]*})\s*\);/);
-
-	    if (match && match[1]) {
-	      const messageData = eval(`(${match[1]})`); // Parse the message object
-
-	      // Send the message using callFrame
-	      callFrame.sendAppMessage(messageData);
-	      console.log("Message sent:", messageData);
-	    } else {
-	      console.error("Invalid sendAppMessage format.");
-	    }
-	  } catch (err) {
-	    console.error('Error executing the code:', err);
-	  }
-	}
-	
-	let logEntries = [];
-
-	// Function to append each message to the utterance log, enforcing chronological order
-	function appendToLog(data) {
-	  const timestamp = new Date();
-
-	  // Format timestamp as [HH:MM:SS.MS AM/PM]
-	  const formattedTimestamp = `${timestamp.toLocaleTimeString('en-US', { hour12: true })}.${String(timestamp.getMilliseconds()).padStart(3, '0')}`;
-
-	  // Create log entry with timestamp, role, speech, and visual context
-	  const logEntryContent = `[${formattedTimestamp}] Role: ${data.properties?.role || 'N/A'}, Speech: ${data.properties?.speech || 'N/A'}, Visual Context: ${data.properties?.visual_context || 'N/A'}`;
-  
-	  // Add the log entry to the array with its timestamp
-	  logEntries.push({ timestamp, content: logEntryContent });
-
-	  // Sort entries by timestamp to maintain chronological order
-	  logEntries.sort((a, b) => a.timestamp - b.timestamp);
-
-	  // Clear and rebuild the log content based on sorted entries
-	  const logContent = document.getElementById('log-content');
-	  logContent.innerHTML = ""; // Clear the existing log
-
-	  logEntries.forEach(entry => {
-	    const logEntry = document.createElement('div');
-	    logEntry.textContent = entry.content;
-	    logContent.appendChild(logEntry);
-	  });
-
-	  // Scroll to the latest entry
-	  logContent.scrollTop = logContent.scrollHeight;
-	}
-	
-  </script>
+    <script src="script.js"></script>
 </body>
 </html>
