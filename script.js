@@ -1,32 +1,66 @@
-let callFrame;
+let callObject = null;
 
 function joinRoom(conversationId) {
-  if (callFrame) {
-    callFrame.leave();
+  if (callObject) {
+    callObject.leave();
   }
 
-  callFrame = window.DailyIframe.createFrame({
-    showLeaveButton: true,
-    iframeStyle: {
-      position: 'fixed',
-      width: '65%',
-      height: '44%',
-      top: '48%',
-      left: '50%',
-      border: '2px solid',
-      zIndex: 1,
-      transform: 'translate(-50%, -50%)'
-    }
+  // Create the call object
+  callObject = DailyIframe.createCallObject();
+
+  // Join the room
+  callObject.join({ 
+    url: `https://tavus.daily.co/${conversationId}`,
+    userName: "Local" // Specify the name of the joining participant
+  })
+  .then(() => {
+    console.log(`Successfully joined room: ${conversationId}`);
+    // Add a delay before checking for participants
+    setTimeout(() => {
+      checkForExistingParticipant();
+    }, 1500); // Wait for 1.5 seconds before checking
+  })
+  .catch((err) => {
+    console.error('Error joining the room:', err);
+    alert('Failed to join the call. Please check the conversation ID.');
   });
 
-  callFrame.join({ url: `https://tavus.daily.co/${conversationId}` })
-    .then(() => console.log(`Successfully joined room: ${conversationId}`))
-    .catch((err) => console.error('Error joining the room:', err));
-
-  callFrame.on('app-message', (message) => {
+  callObject.on('app-message', (message) => {
     console.log('Received app-message:', message);
     appendToLog(message.data);
   });
+}
+
+function checkForExistingParticipant() {
+  const participants = callObject.participants();
+  console.log('Participants:', participants);
+
+  const existingParticipant = Object.values(participants).find(
+    (participant) => participant.local === false
+  );
+
+  if (existingParticipant) {
+    console.log(`Existing participant found: ${existingParticipant.user_id}`);
+
+    // Subscribe to the participant's video and audio tracks
+    if (existingParticipant.tracks.video.state === 'playable') {
+      const videoElement = document.getElementById('participant-video');
+      videoElement.srcObject = new MediaStream([existingParticipant.tracks.video.persistentTrack]);
+    } else {
+      console.log('No playable video track for existing participant.');
+    }
+
+    if (existingParticipant.tracks.audio.state === 'playable') {
+      const audioStream = new MediaStream([existingParticipant.tracks.audio.persistentTrack]);
+      const audio = new Audio();
+      audio.srcObject = audioStream;
+      audio.autoplay = true;
+    } else {
+      console.log('No playable audio track for existing participant.');
+    }
+  } else {
+    console.log('No existing participant found.');
+  }
 }
 
 function joinNewRoom() {
@@ -80,8 +114,8 @@ function updateTextAreas() {
 
 function executeCode(textAreaId) {
   try {
-    if (!callFrame) {
-      console.error("callFrame is not initialized. Please join a room first.");
+    if (!callObject) {
+      console.error("callObject is not initialized. Please join a room first.");
       alert("Please join a room before sending messages.");
       return;
     }
@@ -91,7 +125,7 @@ function executeCode(textAreaId) {
 
     if (match && match[1]) {
       const messageData = eval(`(${match[1]})`);
-      callFrame.sendAppMessage(messageData);
+      callObject.sendAppMessage(messageData);
       console.log("Message sent:", messageData);
     } else {
       console.error("Invalid sendAppMessage format.");
@@ -104,9 +138,14 @@ function executeCode(textAreaId) {
 let logEntries = [];
 
 function appendToLog(data) {
+  // Only log conversation.utterance events
+  if (data.event_type !== 'conversation.utterance') {
+    return;
+  }
+
   const timestamp = new Date();
   const formattedTimestamp = `${timestamp.toLocaleTimeString('en-US', { hour12: true })}.${String(timestamp.getMilliseconds()).padStart(3, '0')}`;
-  const logEntryContent = `[${formattedTimestamp}] Role: ${data.properties?.role || 'N/A'}, Speech: ${data.properties?.speech || 'N/A'}, Visual Context: ${data.properties?.visual_context || 'N/A'}`;
+  const logEntryContent = `[${formattedTimestamp}] Role: ${data.properties?.role || 'N/A'}, Speech: ${data.properties?.speech || 'N/A'}`;
   
   logEntries.push({ timestamp, content: logEntryContent });
   logEntries.sort((a, b) => a.timestamp - b.timestamp);
