@@ -6,6 +6,35 @@
   <title>Tavus Interactions Protocol Playground</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://unpkg.com/@daily-co/daily-js"></script>
+  <style>
+    #video-container {
+      position: fixed;
+      width: 65%;
+      height: 44%;
+      top: 48%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border: 2px solid;
+      z-index: 1;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: black;
+    }
+    #participant-video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: black;
+    }
+    #box2, #box4 {
+      text-align: right;
+    }
+    #box2 button, #box4 button {
+      margin-left: auto;
+    }
+  </style>
 </head>
 <body>
     <div class="centered-content">
@@ -19,7 +48,9 @@
         <div>powered by <a href="https://tavus.io">Tavus</a></div>
     </div>
 
-    <div id="call-container"></div>
+    <div id="video-container">
+        <video id="participant-video" autoplay playsinline></video>
+    </div>
   
     <div id="conversation-input-box">
        <div style="display: flex; align-items: center; justify-content: center;">
@@ -39,7 +70,8 @@ sendAppMessage({
   "event_type": "conversation.echo",
   "conversation_id": "c123456",
   "properties": {
-    "text": "This is the text the replica will speak."
+    "text": "This is the text the replica will speak.",
+    "modality": "speech"
   }
 });
         </textarea>
