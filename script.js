@@ -1,19 +1,67 @@
 let callObject = null;
 
-function joinRoom(conversationId) {
+// Global error handler for uncaught errors (including Daily.js errors)
+window.addEventListener('error', function(event) {
+  if (event.error && event.error.message && event.error.message.includes('Duplicate DailyIframe instances')) {
+    event.preventDefault(); // Prevent the error from being logged to console
+    alert('Error: Cannot create multiple video calls simultaneously. Please leave the current call before joining a new one.');
+    return false;
+  }
+});
+
+// Handle unhandled promise rejections
+window.addEventListener('unhandledrejection', function(event) {
+  if (event.reason && event.reason.message && event.reason.message.includes('Duplicate DailyIframe instances')) {
+    event.preventDefault();
+    alert('Error: Cannot create multiple video calls simultaneously. Please leave the current call before joining a new one.');
+  }
+});
+
+async function joinRoom(conversationId) {
+  // If there's an existing call object, properly leave and destroy it first
   if (callObject) {
-    callObject.leave();
+    try {
+      console.log('Leaving existing room...');
+      await callObject.leave();
+      callObject.destroy();
+      callObject = null;
+      console.log('Successfully left and destroyed previous room');
+    } catch (err) {
+      console.error('Error leaving previous room:', err);
+      // Force cleanup even if leave fails
+      if (callObject) {
+        try {
+          callObject.destroy();
+        } catch (destroyErr) {
+          console.error('Error destroying call object:', destroyErr);
+        }
+        callObject = null;
+      }
+    }
   }
 
-  // Create the call object
-  callObject = DailyIframe.createCallObject();
+  try {
+    // Create the call object
+    callObject = DailyIframe.createCallObject();
 
-  // Join the room
-  callObject.join({ 
-    url: `https://tavus.daily.co/${conversationId}`,
-    userName: "Local" // Specify the name of the joining participant
-  })
-  .then(() => {
+    // Set up event listeners before joining
+    callObject.on('app-message', (message) => {
+      console.log('Received app-message:', message);
+      appendToLog(message.data);
+    });
+
+    // Listen for call state changes
+    callObject.on('left-meeting', () => {
+      console.log('Left the meeting');
+      updateButtonStates(false); // Enable Join button, disable Leave button
+    });
+
+    // Join the room
+    await callObject.join({ 
+      url: `https://tavus.daily.co/${conversationId}`,
+      userName: "Local" // Specify the name of the joining participant
+    });
+    
     console.log(`Successfully joined room: ${conversationId}`);
     updateButtonStates(true); // Enable Leave button, disable Join button
     
@@ -21,23 +69,22 @@ function joinRoom(conversationId) {
     setTimeout(() => {
       checkForExistingParticipant();
     }, 1500); // Wait for 1.5 seconds before checking
-  })
-  .catch((err) => {
+    
+  } catch (err) {
     console.error('Error joining the room:', err);
     alert('Failed to join the call. Please check the conversation ID.');
     updateButtonStates(false); // Keep Join enabled, Leave disabled on error
-  });
-
-  callObject.on('app-message', (message) => {
-    console.log('Received app-message:', message);
-    appendToLog(message.data);
-  });
-
-  // Listen for call state changes
-  callObject.on('left-meeting', () => {
-    console.log('Left the meeting');
-    updateButtonStates(false); // Enable Join button, disable Leave button
-  });
+    
+    // Clean up on error
+    if (callObject) {
+      try {
+        callObject.destroy();
+      } catch (destroyErr) {
+        console.error('Error destroying call object after join failure:', destroyErr);
+      }
+      callObject = null;
+    }
+  }
 }
 
 function checkForExistingParticipant() {
@@ -72,7 +119,7 @@ function checkForExistingParticipant() {
   }
 }
 
-function joinNewRoom() {
+async function joinNewRoom() {
   const conversationId = document.getElementById('conversation-id').value;
 
   if (conversationId.trim() === "") {
@@ -80,7 +127,7 @@ function joinNewRoom() {
     return;
   }
 
-  joinRoom(conversationId);
+  await joinRoom(conversationId);
   updateTextAreas();
 }
 
@@ -355,24 +402,44 @@ function updateButtonStates(isJoined) {
   }
 }
 
-function leaveRoom() {
+async function leaveRoom() {
   if (callObject) {
     console.log('Leaving the room...');
-    callObject.leave()
-      .then(() => {
-        console.log('Successfully left the room');
-        callObject = null; // Clear the call object
-        updateButtonStates(false); // Enable Join button, disable Leave button
-        
-        // Clear the video element
-        const videoElement = document.getElementById('participant-video');
-        if (videoElement.srcObject) {
-          videoElement.srcObject = null;
+    try {
+      await callObject.leave();
+      console.log('Successfully left the room');
+      
+      // Destroy the call object to prevent duplicate instances
+      callObject.destroy();
+      callObject = null;
+      
+      updateButtonStates(false); // Enable Join button, disable Leave button
+      
+      // Clear the video element
+      const videoElement = document.getElementById('participant-video');
+      if (videoElement.srcObject) {
+        videoElement.srcObject = null;
+      }
+    } catch (err) {
+      console.error('Error leaving the room:', err);
+      
+      // Force cleanup even if leave fails
+      if (callObject) {
+        try {
+          callObject.destroy();
+        } catch (destroyErr) {
+          console.error('Error destroying call object:', destroyErr);
         }
-      })
-      .catch((err) => {
-        console.error('Error leaving the room:', err);
-        updateButtonStates(false); // Reset button states even on error
-      });
+        callObject = null;
+      }
+      
+      updateButtonStates(false); // Reset button states even on error
+      
+      // Clear the video element even on error
+      const videoElement = document.getElementById('participant-video');
+      if (videoElement.srcObject) {
+        videoElement.srcObject = null;
+      }
+    }
   }
 }
