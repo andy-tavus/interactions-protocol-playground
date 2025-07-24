@@ -15,6 +15,8 @@ function joinRoom(conversationId) {
   })
   .then(() => {
     console.log(`Successfully joined room: ${conversationId}`);
+    updateButtonStates(true); // Enable Leave button, disable Join button
+    
     // Add a delay before checking for participants
     setTimeout(() => {
       checkForExistingParticipant();
@@ -23,11 +25,18 @@ function joinRoom(conversationId) {
   .catch((err) => {
     console.error('Error joining the room:', err);
     alert('Failed to join the call. Please check the conversation ID.');
+    updateButtonStates(false); // Keep Join enabled, Leave disabled on error
   });
 
   callObject.on('app-message', (message) => {
     console.log('Received app-message:', message);
     appendToLog(message.data);
+  });
+
+  // Listen for call state changes
+  callObject.on('left-meeting', () => {
+    console.log('Left the meeting');
+    updateButtonStates(false); // Enable Join button, disable Leave button
   });
 }
 
@@ -102,14 +111,36 @@ function updateTextAreas() {
     "conversation_id": "${conversation_id}"
   });`;
 
-  document.getElementById('overwrite-context-box').value = `sendAppMessage({
+  updateContextBox();
+}
+
+function updateContextBox() {
+  const conversation_id = document.getElementById('conversation-id').value || "c123456";
+  const mode = document.querySelector('input[name="context-mode"]:checked').value;
+  const contextBox = document.getElementById('context-box');
+  const contextButton = document.getElementById('context-button');
+  
+  if (mode === 'overwrite') {
+    contextBox.value = `sendAppMessage({
     "message_type": "conversation",
     "event_type": "conversation.overwrite_llm_context",
     "conversation_id": "${conversation_id}",
     "properties": {
-      "text": "This text is the context that will be used to overwrite the existing conversational context."
+    "context": "This text is the context that will be used to overwrite the existing conversational context."
+  }
+});`;
+    contextButton.textContent = 'overwrite_llm_context';
+  } else {
+    contextBox.value = `sendAppMessage({
+  "message_type": "conversation",
+  "event_type": "conversation.append_llm_context",
+  "conversation_id": "${conversation_id}",
+  "properties": {
+    "context": "This text is the context that will be appended to the existing conversational context."
     }
   });`;
+    contextButton.textContent = 'append_llm_context';
+  }
 }
 
 function executeCode(textAreaId) {
@@ -127,6 +158,9 @@ function executeCode(textAreaId) {
       const messageData = eval(`(${match[1]})`);
       callObject.sendAppMessage(messageData);
       console.log("Message sent:", messageData);
+      
+      // Log the sent message
+      logEvent(messageData, 'S');
     } else {
       console.error("Invalid sendAppMessage format.");
     }
@@ -137,26 +171,208 @@ function executeCode(textAreaId) {
 
 let logEntries = [];
 
-function appendToLog(data) {
-  // Only log conversation.utterance events
-  if (data.event_type !== 'conversation.utterance') {
-    return;
+// Initialize button states on page load
+document.addEventListener('DOMContentLoaded', function() {
+  updateButtonStates(false); // Initially, Join is enabled, Leave is disabled
+});
+
+function getEventTypeAbbreviation(eventType) {
+  const abbreviations = {
+    'conversation.user.started_speaking': 'U-Start',
+    'conversation.user.stopped_speaking': 'U-Stop',
+    'conversation.replica.started_speaking': 'R-Start',
+    'conversation.replica.stopped_speaking': 'R-Stop',
+    'conversation.utterance': 'Utterance',
+    'conversation.echo': 'Echo',
+    'conversation.respond': 'Respond',
+    'conversation.interrupt': 'Interrupt',
+    'conversation.overwrite_llm_context': 'Overwrite',
+    'conversation.append_llm_context': 'Append'
+  };
+  return abbreviations[eventType] || eventType;
   }
 
-  const timestamp = new Date();
-  const formattedTimestamp = `${timestamp.toLocaleTimeString('en-US', { hour12: true })}.${String(timestamp.getMilliseconds()).padStart(3, '0')}`;
-  const logEntryContent = `[${formattedTimestamp}] Role: ${data.properties?.role || 'N/A'}, Speech: ${data.properties?.speech || 'N/A'}`;
+function getEventTypeColor(eventType, direction) {
+  // Group similar events and use warm/cool colors based on direction
+  const eventGroups = {
+    // From Tavus (received events) - cooler colors
+    'conversation.user.started_speaking': '#7dd3fc', // light blue
+    'conversation.user.stopped_speaking': '#7dd3fc', // same as u-start
+    'conversation.replica.started_speaking': '#86efac', // light green  
+    'conversation.replica.stopped_speaking': '#86efac', // same as r-start
+    'conversation.utterance': '#a5b4fc', // indigo
+    
+    // To Tavus (sent events) - warmer colors
+    'conversation.echo': '#fbbf24', // amber
+    'conversation.respond': '#f97316', // orange
+    'conversation.interrupt': '#ef4444', // red
+    'conversation.overwrite_llm_context': '#d946ef', // fuchsia
+    'conversation.append_llm_context': '#ec4899' // pink
+  };
   
-  logEntries.push({ timestamp, content: logEntryContent });
+  return eventGroups[eventType] || (direction === 'F' ? '#94a3b8' : '#fbbf24'); // default colors
+}
+
+function extractText(data) {
+  if (data.properties?.speech) return data.properties.speech;
+  if (data.properties?.text) return data.properties.text;
+  if (data.properties?.context) return data.properties.context;
+  if (data.properties?.duration) return `${data.properties.duration}s`;
+  return '-';
+}
+
+function logEvent(data, direction) {
+  const timestamp = new Date().toLocaleTimeString('en-US', { 
+    hour12: false, 
+    hour: '2-digit', 
+    minute: '2-digit', 
+    second: '2-digit' 
+  });
+  
+  const eventType = getEventTypeAbbreviation(data.event_type);
+  const role = data.properties?.role || '-';
+  const text = extractText(data);
+  const inferenceId = data.inference_id || '-';
+  
+  logEntries.push({
+    timestamp: new Date(),
+    displayTime: timestamp,
+    eventType,
+    originalEventType: data.event_type,
+    direction,
+    role,
+    text,
+    inferenceId
+  });
+  
+  // Keep only last 250 entries
+  if (logEntries.length > 250) {
+    logEntries = logEntries.slice(-250);
+  }
+  
+  updateLogDisplay();
+}
+
+function updateLogDisplay() {
   logEntries.sort((a, b) => a.timestamp - b.timestamp);
 
   const logContent = document.getElementById('log-content');
-  logContent.innerHTML = "";
+  
+  // Create table HTML
+  let tableHTML = `
+    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+      <thead>
+        <tr style="background: #333; color: #f1f1f1;">
+          <th style="padding: 4px; border: 1px solid #df44a6; text-align: left;">Time</th>
+          <th style="padding: 4px; border: 1px solid #df44a6; text-align: left;">Event</th>
+          <th style="padding: 4px; border: 1px solid #df44a6; text-align: center;">F/T</th>
+          <th style="padding: 4px; border: 1px solid #df44a6; text-align: left;">Role</th>
+          <th style="padding: 4px; border: 1px solid #df44a6; text-align: left;">Text</th>
+          <th style="padding: 4px; border: 1px solid #df44a6; text-align: left;">Inference ID</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+  
   logEntries.forEach(entry => {
-    const logEntry = document.createElement('div');
-    logEntry.textContent = entry.content;
-    logContent.appendChild(logEntry);
+    const eventColor = getEventTypeColor(entry.originalEventType, entry.direction);
+    const truncatedInferenceId = entry.inferenceId && entry.inferenceId.length > 8 ? 
+      entry.inferenceId.substring(0, 8) + '...' : entry.inferenceId;
+    const displayDirection = entry.direction === 'R' ? 'F' : 'T'; // R->F (From), S->T (To)
+    
+    tableHTML += `
+      <tr style="border-bottom: 1px solid #444;">
+        <td style="padding: 2px 4px; border: 1px solid #444; white-space: nowrap;">${entry.displayTime}</td>
+        <td style="padding: 2px 4px; border: 1px solid #444; white-space: nowrap; color: ${eventColor};">${entry.eventType}</td>
+        <td style="padding: 2px 4px; border: 1px solid #444; text-align: center;">${displayDirection}</td>
+        <td style="padding: 2px 4px; border: 1px solid #444;">${entry.role}</td>
+        <td style="padding: 2px 4px; border: 1px solid #444; word-wrap: break-word; max-width: 300px;">${entry.text}</td>
+        <td style="padding: 2px 4px; border: 1px solid #444; white-space: nowrap; font-family: monospace; font-size: 10px;" title="${entry.inferenceId}">${truncatedInferenceId}</td>
+      </tr>
+    `;
   });
 
+  tableHTML += '</tbody></table>';
+  logContent.innerHTML = tableHTML;
   logContent.scrollTop = logContent.scrollHeight;
+}
+
+function appendToLog(data) {
+  logEvent(data, 'R');
+}
+
+function exportLogToCSV() {
+  if (logEntries.length === 0) {
+    alert('No log entries to export');
+    return;
+  }
+  
+  // Create CSV content
+  const headers = ['Timestamp', 'Event Type', 'From/To Tavus', 'Role', 'Text', 'Inference ID'];
+  const csvContent = [
+    headers.join(','),
+    ...logEntries.map(entry => [
+      entry.displayTime,
+      `"${entry.eventType}"`,
+      entry.direction === 'R' ? 'From' : 'To',
+      `"${entry.role}"`,
+      `"${entry.text.replace(/"/g, '""')}"`, // Escape quotes in CSV
+      `"${entry.inferenceId}"`
+    ].join(','))
+  ].join('\n');
+  
+  // Create download link
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `tavus-log-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function showLegend() {
+  document.getElementById('legend-modal').style.display = 'block';
+  return false; // Prevent default link behavior
+}
+
+function hideLegend() {
+  document.getElementById('legend-modal').style.display = 'none';
+}
+
+function updateButtonStates(isJoined) {
+  const joinButton = document.getElementById('join-button');
+  const leaveButton = document.getElementById('leave-button');
+  
+  if (isJoined) {
+    joinButton.disabled = true;
+    leaveButton.disabled = false;
+  } else {
+    joinButton.disabled = false;
+    leaveButton.disabled = true;
+  }
+}
+
+function leaveRoom() {
+  if (callObject) {
+    console.log('Leaving the room...');
+    callObject.leave()
+      .then(() => {
+        console.log('Successfully left the room');
+        callObject = null; // Clear the call object
+        updateButtonStates(false); // Enable Join button, disable Leave button
+        
+        // Clear the video element
+        const videoElement = document.getElementById('participant-video');
+        if (videoElement.srcObject) {
+          videoElement.srcObject = null;
+        }
+      })
+      .catch((err) => {
+        console.error('Error leaving the room:', err);
+        updateButtonStates(false); // Reset button states even on error
+      });
+  }
 }

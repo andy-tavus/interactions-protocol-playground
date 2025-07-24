@@ -23,9 +23,17 @@ button {
   transition: all 0.3s ease;
 }
 
-button:hover {
+button:hover:not(:disabled) {
   background-color: #e75bbc;
   box-shadow: 0 0 15px #df44a6;
+}
+
+button:disabled {
+  background-color: #555;
+  color: #888;
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* Neon glow for text areas */
@@ -103,15 +111,21 @@ input[type="text"] {
   bottom: 23%;
   left: 50%;
   width: 43%;
-  text-align: left;
   border: 2px solid #df44a6;
-  padding: 10px;
   box-sizing: border-box;
   transform: translateX(-50%);
   border-radius: 10px;
   background-color: #1e1e1e;
   color: #f1f1f1;
   box-shadow: 0 0 10px #df44a6;
+  min-height: auto;
+}
+
+/* Legend link styling */
+#legend-link:hover {
+  background: rgba(223, 68, 166, 0.2) !important;
+  box-shadow: 0 0 5px rgba(223, 68, 166, 0.3);
+  transform: translateY(-1px);
 }
 
 /* Daily iframe styling */
