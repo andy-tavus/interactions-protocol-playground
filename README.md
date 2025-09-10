@@ -1,5 +1,6 @@
 # Interactions Protocol Playground
-### Powered by [Tavus](https://tavus.io)
+### [LIVE DEMO](https://andy-tavus.github.io/interactions-protocol-playground/)
+
 
 The **Interactions Protocol Playground** web app allows users to interact with a Daily video room integrated with Tavus's backend for testing replica interactions. Specifically, it utilizes Tavus's [Interactions Protocol](https://docs.tavus.io/api-reference/interactions-protocol). Here's a breakdown of its components and interactions:
 
